@@ -104,7 +104,7 @@ label{display:block;font-size:14px;color:var(--sub);margin:10px 0 4px}
 <div id="toast"></div>
 <script>
 'use strict';
-const VER='0.8';
+const VER='0.9';
 const ICON_V='07';
 const STANDALONE=(()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}})();
 let instEv=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();instEv=e});
@@ -520,13 +520,27 @@ let repAct=null;
 function askReplace(msg,act){$('#repT').textContent=msg;$('#rep').style.display='block';repAct=act;try{$('#rep').scrollIntoView({block:'start'})}catch(e){}}
 $('#repGo').onclick=()=>{$('#rep').style.display='none';const f=repAct;repAct=null;lsS('ws_sc_made','1');if(f)f()};
 $('#repNo').onclick=()=>{$('#rep').style.display='none';repAct=null;lsS('ws_rep_skip',String(Date.now()))};
-function homeShortcut(){
+function homeShortcut(){lsS('ws_icon_v',ICON_V);
   if(lsG('ws_sc_made')||!instEv)askReplace('바탕화면에 바로가기가 이미 있으면 새 10번 아이콘으로 바꾸시겠습니까?',doShortcut);
   else{lsS('ws_sc_made','1');doShortcut()}}
 window.addEventListener('beforeinstallprompt',()=>{setTimeout(()=>{
   if(!LIVE||STANDALONE||!instEv||$('#upd').style.display==='block'||$('#rep').style.display==='block')return;
   if(Date.now()-(+lsG('ws_rep_skip')||0)<86400000)return;
   askReplace('바탕화면 바로가기를 새 10번 아이콘으로 바꾸시겠습니까?',()=>{if(instEv)doPrompt();else doShortcut()})},1500)});
+
+/* ver 0.9: 새 아이콘이 나오면 예전 아이콘으로 만든 바로가기도 바꿀지 열 때 묻는다 (모든 브라우저·운영체제) */
+function iconRefresh(){const ua=navigator.userAgent,and=/Android/i.test(ua),ios=/iPhone|iPad|iPod/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  lsS('ws_icon_v',ICON_V);lsS('ws_sc_made','1');
+  if(instEv){doPrompt();return}
+  if(ios){iosShortcut();return}
+  if(WINPC){iconMaker();return}
+  if(and&&STANDALONE){toast(/SamsungBrowser/.test(ua)?'삼성 인터넷은 아이콘을 스스로 바꾸지 못합니다. 홈 화면 아이콘을 지운 뒤 [바탕화면에 바로가기]를 눌러 주세요':'홈 화면 아이콘은 크롬이 곧 새 그림으로 바꿉니다. 바뀌었다고 물으면 [확인]만 누르세요',9000);return}
+  doShortcut()}
+(function(){const had=STANDALONE||lsG('ws_sc_made');const made=lsG('ws_icon_v');
+  if(!had||made===ICON_V)return;
+  if(Date.now()-(+lsG('ws_rep_skip')||0)<86400000)return;
+  setTimeout(()=>{if($('#rep').style.display==='block'||$('#upd').style.display==='block')return;
+    askReplace('10번 창고 아이콘이 새 그림으로 바뀌었습니다. 바탕화면(홈 화면) 아이콘도 바꾸시겠습니까?',iconRefresh)},1300)})();
 $('#bInst').onclick=homeShortcut;showInst();
 
 /* ---------- 새 버전 알림 (ver 0.7) ---------- */
